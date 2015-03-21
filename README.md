@@ -2,11 +2,11 @@
 
 Parse acorn ast for AMD, CommonJS, and ES6 definitions.
 
-[![Travis build status](http://img.shields.io/travis//acorn-umd.svg?style=flat)](https://travis-ci.org//acorn-umd)
-[![Code Climate](https://codeclimate.com/github//acorn-umd/badges/gpa.svg)](https://codeclimate.com/github//acorn-umd)
-[![Test Coverage](https://codeclimate.com/github//acorn-umd/badges/coverage.svg)](https://codeclimate.com/github//acorn-umd)
-[![Dependency Status](https://david-dm.org//acorn-umd.svg)](https://david-dm.org//acorn-umd)
-[![devDependency Status](https://david-dm.org//acorn-umd/dev-status.svg)](https://david-dm.org//acorn-umd#info=devDependencies)
+[![Travis build status](http://img.shields.io/travis/megawac/acorn-umd.svg?style=flat)](https://travis-ci.org/megawac/acorn-umd)
+[![Code Climate](https://codeclimate.com/github/megawac/acorn-umd/badges/gpa.svg)](https://codeclimate.com/github/megawac/acorn-umd)
+[![Test Coverage](https://codeclimate.com/github/megawac/acorn-umd/badges/coverage.svg)](https://codeclimate.com/github/megawac/acorn-umd)
+[![Dependency Status](https://david-dm.org/megawac/acorn-umd.svg)](https://david-dm.org/megawac/acorn-umd)
+[![devDependency Status](https://david-dm.org/megawac/acorn-umd/dev-status.svg)](https://david-dm.org//acorn-umd#info=devDependencies)
 
 The Nodes created align as closely as possible with the nodes generated for acorns ES6 import nodes. Example below
 
