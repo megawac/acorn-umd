@@ -3,7 +3,7 @@ import umd from '../../src/acorn-umd';
 import _ from 'lodash';
 
 describe('Parsing AST for CommonJS imports', function() {
-    
+
     describe('var|let|const cases', function() {
         let code = `
         var noise;
@@ -178,9 +178,7 @@ describe('Parsing ES6 import nodes', function() {
         import {a, b, c as d} from 'library';
         import foo from 'library';
 
-        function a() {
-
-        }
+        export default function a() {}
     `;
 
     let ast = acorn.parse(code, {ecmaVersion: 6});
@@ -198,9 +196,74 @@ describe('Parsing ES6 import nodes', function() {
     });
 });
 
-describe('acorn-umd', function() {
-  it('should exist', function() {
-    expect(acornUmd).to.exist();
-  });
-});
+describe('Parsing AMD define import nodes', function() {
+    let code = `
+        foo();
+        define(['foo', 'bar', 'twat', 'unused-import'], function(foo, bar, $) {
+            return foo();
+        });
+    `;
 
+    let ast = acorn.parse(code, {ecmaVersion: 6});
+    let imports = umd(ast, {
+        es6: false, amd: true, cjs: false
+    });
+
+    it('AMD identifies multiple variables', function() {
+        expect(imports).to.have.length(1);
+    });
+
+    it('AMD works with global declaration with imports', function() {
+        let code = `
+            define(['smt'], 'global', function(smt) {return null;});
+        `;
+        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
+
+        expect(imports).to.have.length(1);
+    });
+
+    it('AMD identifies no variables', function() {
+        let code = `
+            define(function() {return null;});
+        `;
+        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
+        expect(imports).to.be.empty;
+    });
+
+    it('AMD identifies with gllobal declaration & no variables', function() {
+        let code = `
+            define('global', function() {return null;});
+        `;
+        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
+        expect(imports).to.be.empty;
+    });
+
+    describe('with multiple declarations in a file', function() {
+        let code = `
+            define('foo', function() {return 5});
+            define(['foo', 'x'], 'bar', function(foo, x) {
+                return x + foo;
+            });
+            define(['bar', 'unused-import'], function(bar) {
+                return Math.pow(bar, 2);
+            });
+        `;
+        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
+
+        it('finds all defines with imports', function() {
+
+        });
+    });
+});

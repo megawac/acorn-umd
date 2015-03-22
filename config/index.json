@@ -1,7 +1,0 @@
-{
-  "destinationFolder": "dist",
-  "exportFileName": "acorn-umd",
-  "entryFileName": "acorn-umd",
-  "exportVarName": "acornUmd",
-  "mochaGlobals": ["stub", "spy", "expect"]
-}

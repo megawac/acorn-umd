@@ -2,23 +2,18 @@
   "name": "acorn-umd",
   "version": "0.0.0",
   "description": "Parse acorn ast for AMD, CommonJS, and ES6 definitions",
-  "main": "dist/acorn-umd.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "gulp"
+    "test": "gulp",
+    "build": "gulp build",
+    "coverage": "gulp coverage"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com//acorn-umd.git"
   },
   "keywords": [
-    "boilerplate",
-    "es6",
-    "node",
-    "starter",
-    "kit",
-    "transpile",
-    "6to5",
-    "babel"
+    "acorn", "modules", "ast", "umd", "commonjs", "amd" 
   ],
   "author": "Graeme Yeates <megawac@gmail.com>",
   "license": "MIT",
@@ -27,36 +22,35 @@
   },
   "homepage": "https://github.com//acorn-umd",
   "devDependencies": {
-    "babel": "^4.7.3",
-    "browserify": "^8.1.1",
-    "chai": "^1.10.0",
+    "babel": "^4.3.0",
+    "chai": "^2.0.0",
     "del": "^1.1.1",
-    "esperanto": "^0.6.7",
     "gulp": "^3.8.10",
     "gulp-babel": "^4.0.0",
-    "gulp-file": "^0.2.0",
-    "gulp-filter": "^2.0.0",
     "gulp-istanbul": "^0.6.0",
+    "gulp-jscs": "^1.4.0",
     "gulp-jshint": "^1.9.0",
-    "gulp-livereload": "^3.4.0",
     "gulp-load-plugins": "^0.8.0",
     "gulp-mocha": "^2.0.0",
     "gulp-notify": "^2.1.0",
     "gulp-plumber": "^0.6.6",
-    "gulp-rename": "^1.2.0",
-    "gulp-sourcemaps": "^1.3.0",
-    "gulp-uglifyjs": "^0.5.0",
-    "isparta": "^1.0.1",
+    "isparta": "^2.0.0",
     "jshint-stylish": "^1.0.0",
+    "mkdirp": "^0.5.0",
     "mocha": "^2.1.0",
-    "run-sequence": "^1.0.2",
     "sinon": "^1.12.2",
-    "sinon-chai": "^2.6.0",
-    "vinyl-source-stream": "^1.0.0"
+    "sinon-chai": "^2.7.0"
+  },
+  "nodeBoilerplateOptions": {
+    "mochaGlobals": [
+      "stub",
+      "spy",
+      "expect"
+    ]
   },
   "dependencies": {
     "acorn": "^0.12.0",
     "lodash": "^3.5.0",
-    "walkall": "deathcap/acorn-walkall#es6"
+    "walkall": "sourcegraph/acorn-walkall"
   }
 }

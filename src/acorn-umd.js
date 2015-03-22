@@ -1,10 +1,26 @@
-import lodash from 'lodash';
+import {assign, find, filter, isMatch, matches, pluck, reject, zip} from 'lodash';
 import walk from 'acorn/util/walk';
 import walkall from 'walkall';
 
-const isRequireCallee = lodash.matches({
+const isRequireCallee = matches({
   name: 'require',
   type: 'Identifier'
+});
+
+const isDefineCallee = matches({
+  type: 'CallExpression',
+  // calleee: {
+  //   name: 'define',
+  //   type: 'Identifier'
+  // }
+});
+
+const isArrayExpr = matches({
+  type: 'ArrayExpression'
+});
+
+const isFuncExpr = matches({
+  type: 'FunctionExpression'
 });
 
 // Set up an AST Node similar to an ES6 import node
@@ -33,7 +49,7 @@ function constructCJSImportNode(node) {
       let declaration = isVariable ? node.declarations[0] : node;
       // init for var, value for property
       let value = declaration.init || declaration.value;
-      if (lodash.isMatch(value, { type: 'CallExpression' })) {
+      if (isMatch(value, { type: 'CallExpression' })) {
         importExpr = value;
       }
 
@@ -76,7 +92,7 @@ function findCJS(ast) {
         let declaration = node.declarations ? node.declarations[0] : node;
         // init for var, value for property
         let value = declaration.init || declaration.value;
-        if (lodash.isMatch(value, { type: 'CallExpression' })) {
+        if (isMatch(value, { type: 'CallExpression' })) {
           expr = value;
         }
     }
@@ -85,19 +101,47 @@ function findCJS(ast) {
     }
   }), walkall.traversers);
 
-  return lodash(requires)
-    // Filter the overlapping requires (e.g. if var x = require('./x') it'll show up twice).
-    // Do this by just checking line #'s
-    .reject(node => {
-      return lodash.any(requires, parent =>
-        [node.start, node.stop].some(pos => lodash.inRange(pos, parent.start + 0.1, parent.end)));
+  // Filter the overlapping requires (e.g. if var x = require('./x') it'll show up twice).
+  // Do this by just checking line #'s
+  return reject(requires, node => {
+      return requires.some(parent =>
+        [node.start, node.stop].some(pos => pos > parent.start && pos < parent.end));
     })
-    .map(constructCJSImportNode)
-    .value();
+    .map(constructCJSImportNode);
+}
+
+// Note there can be more than one define per file with global registeration.
+function findAMD(ast) {
+  return pluck(filter(ast.body, {
+    type: 'ExpressionStatement'
+  }), 'expression')
+  .filter(isDefineCallee)
+  // Til https://github.com/lodash/lodash/commit/f20d8f5cc05f98775969c504b081ccc1fddb54c5
+  .filter(node => {
+    return isMatch(node.callee, {
+      name: 'define',
+      type: 'Identifier'
+    });
+  })
+  // Ensure the define takes params and has a function
+  .filter(node => filter(node.arguments, isFuncExpr).length === 1)
+  // ~~Not necessary~~
+  // .filter(node => filter(node.arguments, isArrayExpr).length === 1)
+  // Now just zip the array arguments and the provided function params
+  .map(node => {
+    let imports = find(node.arguments, isArrayExpr);
+    let func = find(node.arguments, isFuncExpr);
+    return {
+      node: node,
+      zip: zip(imports.elements, func.params)
+    };
+  })
+  // Now just format them up
+  .map(node => console.log(node));
 }
 
 export default function(ast, options) {
-  options = lodash.extend({
+  options = assign({
     cjs: true,
     // TODO
     amd: false,
@@ -112,9 +156,13 @@ export default function(ast, options) {
   }
 
   if (options.es6) {
-    result.push(...lodash.filter(ast.body, {
+    result.push(...filter(ast.body, {
       type: 'ImportDeclaration'
     }));
+  }
+
+  if (options.amd) {
+    result.push(...findAMD(ast));
   }
 
   return result;
