@@ -3,8 +3,8 @@
 Parse acorn ast for AMD, CommonJS, and ES6 definitions.
 
 [![Travis build status](http://img.shields.io/travis/megawac/acorn-umd.svg?style=flat)](https://travis-ci.org/megawac/acorn-umd)
-[![Code Climate](https://codeclimate.com/github/megawac/acorn-umd/badges/gpa.svg)](https://codeclimate.com/github/megawac/acorn-umd)
 [![Test Coverage](https://codeclimate.com/github/megawac/acorn-umd/badges/coverage.svg)](https://codeclimate.com/github/megawac/acorn-umd)
+[![Code Climate](https://codeclimate.com/github/megawac/acorn-umd/badges/gpa.svg)](https://codeclimate.com/github/megawac/acorn-umd)
 [![Dependency Status](https://david-dm.org/megawac/acorn-umd.svg)](https://david-dm.org/megawac/acorn-umd)
 [![devDependency Status](https://david-dm.org/megawac/acorn-umd/dev-status.svg)](https://david-dm.org//acorn-umd#info=devDependencies)
 
