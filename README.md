@@ -75,6 +75,47 @@ console.log(imports);
 ```
 
 
-# TODO
+# AMD Imports
 
-- AMD Support
+```js
+let code = `
+  foo();
+  define(['foo', 'unused-import'], function($) {
+      return $();
+  });
+`;
+
+let ast = acorn.parse(code, {ecmaVersion: 6});
+let parsed = umd(ast, {
+  es6: false, amd: true, cjs: false
+});
+
+console.log(parsed);
+
+[
+ {
+  type: 'AMDImport',
+  reference: { DEFINE_NODE },
+  start: 12,
+  end: 81,
+
+  specifiers: [ { type: 'Identifier', start: 54, end: 55, name: '$' } ],
+  sources: 
+   [ { type: 'Literal',
+       reference: [Object],
+       value: 'foo',
+       raw: '\'foo\'',
+       start: 20,
+       end: 25 },
+     { type: 'Literal',
+       reference: [Object],
+       value: 'unused-import',
+       raw: '\'unused-import\'',
+       start: 27,
+       end: 42 } ],
+
+  // Grouped [source, variable] name array
+  imports: [ [ {SOURCE_NODE}, {VARIABLE_NODE} ], [ {SOURCE_NODE}, undefined ] 
+ }
+]
+```

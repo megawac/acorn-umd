@@ -1,4 +1,4 @@
-import {assign, find, filter, isMatch, matches, pluck, reject, zip} from 'lodash';
+import {assign, find, filter, isMatch, matches, pluck, reject, take, zip} from 'lodash';
 import walk from 'acorn/util/walk';
 import walkall from 'walkall';
 
@@ -34,6 +34,28 @@ function constructImportNode(node, type) {
   };
 }
 
+function createImportSpecifier(source, isDef) {
+  // Add the specifier
+  let {name, type, start, end} = source;
+  return {
+    start, end,
+    type: 'ImportSpecifier',
+    id: {
+      type, start, end, name
+    },
+    default: typeof isDef === 'boolean' ? isDef : true
+  };
+}
+
+function createSourceNode(node, source) {
+  let {value, raw, start, end} = source;
+  return {
+    type: 'Literal',
+    reference: node,
+    value, raw, start, end
+  };
+}
+
 function constructCJSImportNode(node) {
   let result = constructImportNode(node, 'CJSImport');
   let importExpr, isVariable = false;
@@ -54,27 +76,11 @@ function constructCJSImportNode(node) {
       }
 
       let source = isVariable ? declaration.id : declaration.key;
-
-      // Add the specifier
-      let {name, type, start, end} = source;
-      result.specifiers.push({
-        start, end,
-        type: 'ImportSpecifier',
-        id: {
-          type, start, end, name
-        },
-        default: isVariable
-      });
+      result.specifiers.push(createImportSpecifier(source, isVariable));
     }
   }
 
-  let {value, raw, start, end} = importExpr.arguments[0];
-  result.source = {
-    type: 'Literal',
-    reference: node,
-    value, raw, start, end
-  };
-
+  result.source = createSourceNode(node, importExpr.arguments[0]);
   return result;
 }
 
@@ -124,20 +130,31 @@ function findAMD(ast) {
     });
   })
   // Ensure the define takes params and has a function
+  .filter(node => node.arguments.length <= 3)
   .filter(node => filter(node.arguments, isFuncExpr).length === 1)
-  // ~~Not necessary~~
-  // .filter(node => filter(node.arguments, isArrayExpr).length === 1)
+  .filter(node => filter(node.arguments, isArrayExpr).length <= 1)
   // Now just zip the array arguments and the provided function params
   .map(node => {
-    let imports = find(node.arguments, isArrayExpr);
+    let outnode = constructImportNode(node, 'AMDImport');
+
+
     let func = find(node.arguments, isFuncExpr);
-    return {
-      node: node,
-      zip: zip(imports.elements, func.params)
-    };
-  })
+    let imports = find(node.arguments, isArrayExpr) || {elements: []};
+
+    let params = take(func.params, imports.elements.length);
+    outnode.specifiers = params;
+
+    if (imports) {
+      // Use an array even though its not spec as there isn't a better way to
+      // represent this structure
+      outnode.sources = imports.elements.map(imp => createSourceNode(node, imp));
+      // Make nicer repr: [[importSrc, paramName]]
+      outnode.imports = zip(imports.elements, params);
+    }
+    return outnode;
+  });
   // Now just format them up
-  .map(node => console.log(node));
+  // .map(node => console.log(node));
 }
 
 export default function(ast, options) {

@@ -2,7 +2,7 @@
   "name": "acorn-umd",
   "version": "0.0.0",
   "description": "Parse acorn ast for AMD, CommonJS, and ES6 definitions",
-  "main": "dist/index.js",
+  "main": "dist/acorn-umd.js",
   "scripts": {
     "test": "gulp",
     "build": "gulp build",
