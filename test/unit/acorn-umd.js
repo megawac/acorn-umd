@@ -300,22 +300,43 @@ describe('Parsing AMD define import nodes', function() {
     });
 
     describe('with multiple declarations in a file', function() {
-        // let code = `
-        //     define('foo', function() {return 5});
-        //     define(['foo', 'x'], 'bar', function(foo, x) {
-        //         return x + foo;
-        //     });
-        //     define(['bar', 'unused-import'], function(bar) {
-        //         return Math.pow(bar, 2);
-        //     });
-        // `;
-        // let ast = acorn.parse(code, {ecmaVersion: 6});
-        // let imports = umd(ast, {
-        //     es6: false, amd: true, cjs: false
-        // });
+        let code = `
+            define('foo', function() {return 5});
+            define(['foo', 'x'], 'bar', function(foo, x) {
+                return x + foo;
+            });
+            define(['bar', 'unused-import'], function(bar) {
+                return Math.pow(bar, 2);
+            });
+        `;
+        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let parsed = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
 
-        // it('finds all defines with imports', function() {
+        it('finds all defines with imports', function() {
+            expect(parsed).to.have.length(3);
+        });
 
-        // });
+        it('Global no vars parsed correctly', function() {
+            let {specifiers, imports, sources} = parsed[0];
+            expect(imports).to.be.empty;
+            expect(sources).to.be.empty;
+            expect(specifiers).to.be.empty;
+        });
+
+        it('Global with imports parsed correctly', function() {
+            let {specifiers, imports, sources} = parsed[1];
+            expect(imports).to.have.length(2);
+            expect(sources).to.have.length(2);
+            expect(specifiers).to.have.length(2);
+        });
+
+        it('Anon with imports parsed correctly', function() {
+            let {specifiers, imports, sources} = parsed[2];
+            expect(imports).to.have.length(2);
+            expect(sources).to.have.length(2);
+            expect(specifiers).to.have.length(1);
+        });
     });
 });
