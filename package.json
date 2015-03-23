@@ -1,6 +1,6 @@
 {
   "name": "acorn-umd",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Parse acorn ast for AMD, CommonJS, and ES6 definitions",
   "main": "dist/acorn-umd.js",
   "scripts": {
@@ -14,7 +14,12 @@
     "url": "https://github.com//acorn-umd.git"
   },
   "keywords": [
-    "acorn", "modules", "ast", "umd", "commonjs", "amd" 
+    "acorn",
+    "modules",
+    "ast",
+    "umd",
+    "commonjs",
+    "amd"
   ],
   "author": "Graeme Yeates <megawac@gmail.com>",
   "license": "MIT",
@@ -52,6 +57,6 @@
   "dependencies": {
     "acorn": "^0.12.0",
     "lodash": "^3.5.0",
-    "walkall": "sourcegraph/acorn-walkall"
+    "walkall": "0.0.5"
   }
 }
