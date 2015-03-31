@@ -3,8 +3,11 @@ import walk from 'acorn/util/walk';
 import walkall from 'walkall';
 
 const isRequireCallee = matches({
-  name: 'require',
-  type: 'Identifier'
+  type: 'CallExpression',
+  callee: {
+    name: 'require',
+    type: 'Identifier'
+  }
 });
 
 const isDefineCallee = matches({
@@ -64,6 +67,12 @@ function constructCJSImportNode(node) {
     case 'CallExpression':
       importExpr = node;
       break;
+    case 'AssignmentExpression':
+      let specifier = createImportSpecifier(node.left, false);
+      specifier.id.name = node.left.property.name;
+      result.specifiers.push(specifier);
+      importExpr = node.right;
+      break;
     case 'VariableDeclaration':
       isVariable = true;
       /* falls through */
@@ -71,11 +80,8 @@ function constructCJSImportNode(node) {
       let declaration = isVariable ? node.declarations[0] : node;
       // init for var, value for property
       let value = declaration.init || declaration.value;
-      if (isMatch(value, { type: 'CallExpression' })) {
-        importExpr = value;
-      }
-
       let source = isVariable ? declaration.id : declaration.key;
+      importExpr = value;
       result.specifiers.push(createImportSpecifier(source, isVariable));
     }
   }
@@ -93,16 +99,16 @@ function findCJS(ast) {
       case 'CallExpression':
         expr = node;
         break;
+      case 'AssignmentExpression':
+        expr = node.right;
+        break;
       case 'Property':
       case 'VariableDeclaration':
         let declaration = node.declarations ? node.declarations[0] : node;
         // init for var, value for property
-        let value = declaration.init || declaration.value;
-        if (isMatch(value, { type: 'CallExpression' })) {
-          expr = value;
-        }
+        expr = declaration.init || declaration.value;
     }
-    if (expr && isRequireCallee(expr.callee)) {
+    if (expr && isRequireCallee(expr)) {
       requires.push(node);
     }
   }), walkall.traversers);

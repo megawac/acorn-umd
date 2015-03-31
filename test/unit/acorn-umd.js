@@ -100,12 +100,14 @@ describe('Parsing AST for CommonJS imports', function() {
         });
     });
 
-    it ('should identify property cases', function() {
+    describe('identifies property cases', function() {
         let code = `
             var f = {
                 a: 1, b: 2,
                 foo: require('bar')
             }
+
+            f.x = require('foo');
         `;
 
         let ast = acorn.parse(code);
@@ -113,30 +115,54 @@ describe('Parsing AST for CommonJS imports', function() {
             es6: false, amd: false, cjs: true
         });
 
-        expect(imports).to.have.length(1);
-        expect(_.all(imports, {
-            type: 'CJSImport'
-        })).to.be.ok;
-        expect(_.all(imports, 'source')).to.be.ok;
-        expect(_.all(imports, 'specifiers')).to.be.ok;
-        expect(_.all(imports, 'reference')).to.be.ok;
-
-        let test = imports[0];
-
-        expect(test.specifiers[0]).to.be.deep.equal({
-            type: 'ImportSpecifier',
-            start: 67,
-            end: 70,
-            id: { type: 'Identifier', start: 67, end: 70, name: 'foo' },
-            default: false
+        it('identifies all cases', function() {
+            expect(imports).to.have.length(2);
+            expect(_.all(imports, {
+                type: 'CJSImport'
+            })).to.be.ok;
+            expect(_.all(imports, 'source')).to.be.ok;
+            expect(_.all(imports, 'specifiers')).to.be.ok;
+            expect(_.all(imports, 'reference')).to.be.ok;
         });
 
-        expect(_.omit(test.source, 'reference')).to.be.deep.equal({
-            type: 'Literal',
-            value: 'bar',
-            raw: '\'bar\'',
-            start: 80,
-            end: 85
+        it('object declaration property style', function() {
+            let test = imports[0];
+
+            expect(test.specifiers[0]).to.be.deep.equal({
+                type: 'ImportSpecifier',
+                start: 67,
+                end: 70,
+                id: { type: 'Identifier', start: 67, end: 70, name: 'foo' },
+                default: false
+            });
+
+            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'bar',
+                raw: '\'bar\'',
+                start: 80,
+                end: 85
+            });
+        });
+
+        it('additional property style', function() {
+            let test = imports[1];
+            // console.log(test);
+            expect(test.specifiers[0]).to.be.deep.equal({
+                type: 'ImportSpecifier',
+                start: 114,
+                end: 117,
+                id: { type: 'MemberExpression', start: 114, end: 117, name: 'x' },
+                default: false
+            });
+
+            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'foo',
+                raw: '\'foo\'',
+                start: 128,
+                end: 133
+            });
         });
     });
 

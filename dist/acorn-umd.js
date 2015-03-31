@@ -19,8 +19,11 @@ var walk = _interopRequire(require("acorn/util/walk"));
 var walkall = _interopRequire(require("walkall"));
 
 var isRequireCallee = matches({
-  name: "require",
-  type: "Identifier"
+  type: "CallExpression",
+  callee: {
+    name: "require",
+    type: "Identifier"
+  }
 });
 
 var isDefineCallee = matches({
@@ -80,26 +83,27 @@ function createSourceNode(node, source) {
 function constructCJSImportNode(node) {
   var result = constructImportNode(node, "CJSImport");
   var importExpr = undefined,
-      isVariable = false;
+      isAssignment = false;
 
   switch (node.type) {
     case "CallExpression":
       importExpr = node;
       break;
     case "VariableDeclaration":
-      isVariable = true;
+      isAssignment = true;
     /* falls through */
+    case "AssignmentExpression":
     case "Property":
       {
-        var declaration = isVariable ? node.declarations[0] : node;
+        var declaration = isAssignment ? node.declarations[0] : node;
         // init for var, value for property
         var value = declaration.init || declaration.value;
         if (isMatch(value, { type: "CallExpression" })) {
           importExpr = value;
         }
 
-        var source = isVariable ? declaration.id : declaration.key;
-        result.specifiers.push(createImportSpecifier(source, isVariable));
+        var source = isAssignment ? declaration.id : declaration.key;
+        result.specifiers.push(createImportSpecifier(source, isAssignment));
       }
   }
 
@@ -116,6 +120,9 @@ function findCJS(ast) {
       case "CallExpression":
         expr = node;
         break;
+      // case 'AssignmentExpression':
+      //   expr = node.right;
+      //   break;
       case "Property":
       case "VariableDeclaration":
         var declaration = node.declarations ? node.declarations[0] : node;
@@ -125,7 +132,7 @@ function findCJS(ast) {
           expr = value;
         }
     }
-    if (expr && isRequireCallee(expr.callee)) {
+    if (expr && isRequireCallee(expr)) {
       requires.push(node);
     }
   }), walkall.traversers);
