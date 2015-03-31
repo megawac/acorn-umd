@@ -1,5 +1,6 @@
 import {assign, find, filter, isMatch, matches, pluck, reject, take, zip} from 'lodash';
 import {simple as walkSimple} from 'acorn/dist/walk';
+import Node from './Node';
 import walkall from 'walkall';
 
 const isRequireCallee = matches({
@@ -29,34 +30,34 @@ const isFuncExpr = matches({
 // Set up an AST Node similar to an ES6 import node
 function constructImportNode(node, type) {
   let {start, end} = node;
-  return {
+  return new Node({
     type: type,
     reference: node,
     specifiers: [],
     start, end
-  };
+  });
 }
 
 function createImportSpecifier(source, isDef) {
   // Add the specifier
   let {name, type, start, end} = source;
-  return {
+  return new Node({
     start, end,
     type: 'ImportSpecifier',
     id: {
       type, start, end, name
     },
     default: typeof isDef === 'boolean' ? isDef : true
-  };
+  });
 }
 
 function createSourceNode(node, source) {
   let {value, raw, start, end} = source;
-  return {
+  return new Node({
     type: 'Literal',
     reference: node,
     value, raw, start, end
-  };
+  });
 }
 
 function constructCJSImportNode(node) {
