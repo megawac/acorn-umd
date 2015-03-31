@@ -14,7 +14,7 @@ var reject = _lodash.reject;
 var take = _lodash.take;
 var zip = _lodash.zip;
 
-var walk = _interopRequire(require("acorn/dist/walk"));
+var walkSimple = require("acorn/dist/walk").simple;
 
 var walkall = _interopRequire(require("walkall"));
 
@@ -116,7 +116,7 @@ function constructCJSImportNode(node) {
 function findCJS(ast) {
   // Recursively walk ast searching for requires
   var requires = [];
-  walk.simple(ast, walkall.makeVisitors(function (node) {
+  walkSimple(ast, walkall.makeVisitors(function (node) {
     var expr = undefined;
     switch (node.type) {
       case "CallExpression":
