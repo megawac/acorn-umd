@@ -16,6 +16,8 @@ var zip = _lodash.zip;
 
 var walkSimple = require("acorn/dist/walk").simple;
 
+var Node = _interopRequire(require("./Node"));
+
 var walkall = _interopRequire(require("walkall"));
 
 var isRequireCallee = matches({
@@ -42,12 +44,12 @@ function constructImportNode(node, type) {
   var start = node.start;
   var end = node.end;
 
-  return {
+  return new Node({
     type: type,
     reference: node,
     specifiers: [],
     start: start, end: end
-  };
+  });
 }
 
 function createImportSpecifier(source, isDef) {
@@ -57,14 +59,14 @@ function createImportSpecifier(source, isDef) {
   var start = source.start;
   var end = source.end;
 
-  return {
+  return new Node({
     start: start, end: end,
     type: "ImportSpecifier",
     id: {
       type: type, start: start, end: end, name: name
     },
     "default": typeof isDef === "boolean" ? isDef : true
-  };
+  });
 }
 
 function createSourceNode(node, source) {
@@ -73,11 +75,11 @@ function createSourceNode(node, source) {
   var start = source.start;
   var end = source.end;
 
-  return {
+  return new Node({
     type: "Literal",
     reference: node,
     value: value, raw: raw, start: start, end: end
-  };
+  });
 }
 
 function constructCJSImportNode(node) {
