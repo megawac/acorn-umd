@@ -1,5 +1,5 @@
 import {assign, find, filter, isMatch, matches, pluck, reject, take, zip} from 'lodash';
-import walk from 'acorn/util/walk';
+import {simple as walkSimple} from 'acorn/dist/walk';
 import walkall from 'walkall';
 
 const isRequireCallee = matches({
@@ -93,7 +93,7 @@ function constructCJSImportNode(node) {
 function findCJS(ast) {
   // Recursively walk ast searching for requires
   let requires = [];
-  walk.simple(ast, walkall.makeVisitors(function(node) {
+  walkSimple(ast, walkall.makeVisitors(function(node) {
     let expr;
     switch (node.type) {
       case 'CallExpression':

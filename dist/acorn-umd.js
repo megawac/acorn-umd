@@ -14,7 +14,7 @@ var reject = _lodash.reject;
 var take = _lodash.take;
 var zip = _lodash.zip;
 
-var walk = _interopRequire(require("acorn/util/walk"));
+var walk = _interopRequire(require("acorn/dist/walk"));
 
 var walkall = _interopRequire(require("walkall"));
 
@@ -83,27 +83,29 @@ function createSourceNode(node, source) {
 function constructCJSImportNode(node) {
   var result = constructImportNode(node, "CJSImport");
   var importExpr = undefined,
-      isAssignment = false;
+      isVariable = false;
 
   switch (node.type) {
     case "CallExpression":
       importExpr = node;
       break;
-    case "VariableDeclaration":
-      isAssignment = true;
-    /* falls through */
     case "AssignmentExpression":
+      var specifier = createImportSpecifier(node.left, false);
+      specifier.id.name = node.left.property.name;
+      result.specifiers.push(specifier);
+      importExpr = node.right;
+      break;
+    case "VariableDeclaration":
+      isVariable = true;
+    /* falls through */
     case "Property":
       {
-        var declaration = isAssignment ? node.declarations[0] : node;
+        var declaration = isVariable ? node.declarations[0] : node;
         // init for var, value for property
         var value = declaration.init || declaration.value;
-        if (isMatch(value, { type: "CallExpression" })) {
-          importExpr = value;
-        }
-
-        var source = isAssignment ? declaration.id : declaration.key;
-        result.specifiers.push(createImportSpecifier(source, isAssignment));
+        var source = isVariable ? declaration.id : declaration.key;
+        importExpr = value;
+        result.specifiers.push(createImportSpecifier(source, isVariable));
       }
   }
 
@@ -120,17 +122,14 @@ function findCJS(ast) {
       case "CallExpression":
         expr = node;
         break;
-      // case 'AssignmentExpression':
-      //   expr = node.right;
-      //   break;
+      case "AssignmentExpression":
+        expr = node.right;
+        break;
       case "Property":
       case "VariableDeclaration":
         var declaration = node.declarations ? node.declarations[0] : node;
         // init for var, value for property
-        var value = declaration.init || declaration.value;
-        if (isMatch(value, { type: "CallExpression" })) {
-          expr = value;
-        }
+        expr = declaration.init || declaration.value;
     }
     if (expr && isRequireCallee(expr)) {
       requires.push(node);

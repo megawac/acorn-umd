@@ -1,4 +1,4 @@
-import acorn from 'acorn';
+import {parse} from 'acorn';
 import umd from '../../src/acorn-umd';
 import _ from 'lodash';
 
@@ -17,7 +17,7 @@ describe('Parsing AST for CommonJS imports', function() {
         const z1 = require('bar');
         `;
 
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let imports = umd(ast, {
             es6: false, amd: false, cjs: true
         });
@@ -110,7 +110,7 @@ describe('Parsing AST for CommonJS imports', function() {
             f.x = require('foo');
         `;
 
-        let ast = acorn.parse(code);
+        let ast = parse(code);
         let imports = umd(ast, {
             es6: false, amd: false, cjs: true
         });
@@ -173,7 +173,7 @@ describe('Parsing AST for CommonJS imports', function() {
             var x = 1;
         `;
 
-        let ast = acorn.parse(code);
+        let ast = parse(code);
         let imports = umd(ast, {
             es6: false, amd: false, cjs: true
         });
@@ -203,17 +203,18 @@ describe('Parsing ES6 import nodes', function() {
     let code = `
         import {a, b, c as d} from 'library';
         import foo from 'library';
+        import * as foo from 'lib';
 
         export default function a() {}
     `;
 
-    let ast = acorn.parse(code, {ecmaVersion: 6});
+    let ast = parse(code, {ecmaVersion: 6, sourceType: 'module'});
     let imports = umd(ast, {
         es6: true, amd: false, cjs: false
     });
 
     it('should find ES6 import nodes in the AST', function() {
-        expect(imports).to.have.length(2);
+        expect(imports).to.have.length(3);
         expect(_.all(imports, {
             type: 'ImportDeclaration'
         })).to.be.ok;
@@ -231,7 +232,7 @@ describe('Parsing AMD define import nodes', function() {
             });
         `;
 
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let parsed = umd(ast, {
             es6: false, amd: true, cjs: false
         });
@@ -266,7 +267,7 @@ describe('Parsing AMD define import nodes', function() {
         let code = `
             define(['smt'], 'global', function(smt) {return null;});
         `;
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let parsed = umd(ast, {
             es6: false, amd: true, cjs: false
         });
@@ -287,7 +288,7 @@ describe('Parsing AMD define import nodes', function() {
         let code = `
             define(function() {return null;});
         `;
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let parsed = umd(ast, {
             es6: false, amd: true, cjs: false
         });
@@ -308,7 +309,7 @@ describe('Parsing AMD define import nodes', function() {
         let code = `
             define('global', function() {return null;});
         `;
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let parsed = umd(ast, {
             es6: false, amd: true, cjs: false
         });
@@ -335,7 +336,7 @@ describe('Parsing AMD define import nodes', function() {
                 return Math.pow(bar, 2);
             });
         `;
-        let ast = acorn.parse(code, {ecmaVersion: 6});
+        let ast = parse(code, {ecmaVersion: 6});
         let parsed = umd(ast, {
             es6: false, amd: true, cjs: false
         });
