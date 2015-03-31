@@ -1,7 +1,9 @@
-import {assign, find, filter, isMatch, matches, pluck, reject, take, zip} from 'lodash';
-import {simple as walkSimple} from 'acorn/dist/walk';
+import {assign, find, filter, matches, pluck, reject, take, zip} from 'lodash';
+import estraverse from 'estraverse';
+import escope from 'escope';
+
 import Node from './Node';
-import walkall from 'walkall';
+import ImportNode from './ImportNode';
 
 const isRequireCallee = matches({
   type: 'CallExpression',
@@ -13,10 +15,10 @@ const isRequireCallee = matches({
 
 const isDefineCallee = matches({
   type: 'CallExpression',
-  // calleee: {
-  //   name: 'define',
-  //   type: 'Identifier'
-  // }
+  callee: {
+    name: 'define',
+    type: 'Identifier'
+  }
 });
 
 const isArrayExpr = matches({
@@ -28,9 +30,9 @@ const isFuncExpr = matches({
 });
 
 // Set up an AST Node similar to an ES6 import node
-function constructImportNode(node, type) {
+function constructImportNode(astWrap, node, type) {
   let {start, end} = node;
-  return new Node({
+  return new ImportNode(astWrap, {
     type: type,
     reference: node,
     specifiers: [],
@@ -60,8 +62,8 @@ function createSourceNode(node, source) {
   });
 }
 
-function constructCJSImportNode(node) {
-  let result = constructImportNode(node, 'CJSImport');
+function constructCJSImportNode(astWrap, node) {
+  let result = constructImportNode(astWrap, node, 'CJSImport');
   let importExpr, isVariable = false;
 
   switch (node.type) {
@@ -91,28 +93,30 @@ function constructCJSImportNode(node) {
   return result;
 }
 
-function findCJS(ast) {
+function findCJS(astWrap) {
   // Recursively walk ast searching for requires
   let requires = [];
-  walkSimple(ast, walkall.makeVisitors(function(node) {
-    let expr;
-    switch (node.type) {
-      case 'CallExpression':
-        expr = node;
-        break;
-      case 'AssignmentExpression':
-        expr = node.right;
-        break;
-      case 'Property':
-      case 'VariableDeclaration':
-        let declaration = node.declarations ? node.declarations[0] : node;
-        // init for var, value for property
-        expr = declaration.init || declaration.value;
+  estraverse.traverse(astWrap.ast, {
+    enter(node) {
+      let expr;
+      switch (node.type) {
+        case 'CallExpression':
+          expr = node;
+          break;
+        case 'AssignmentExpression':
+          expr = node.right;
+          break;
+        case 'Property':
+        case 'VariableDeclaration':
+          let declaration = node.declarations ? node.declarations[0] : node;
+          // init for var, value for property
+          expr = declaration.init || declaration.value;
+      }
+      if (expr && isRequireCallee(expr)) {
+        requires.push(node);
+      }
     }
-    if (expr && isRequireCallee(expr)) {
-      requires.push(node);
-    }
-  }), walkall.traversers);
+  });
 
   // Filter the overlapping requires (e.g. if var x = require('./x') it'll show up twice).
   // Do this by just checking line #'s
@@ -120,30 +124,22 @@ function findCJS(ast) {
       return requires.some(parent =>
         [node.start, node.stop].some(pos => pos > parent.start && pos < parent.end));
     })
-    .map(constructCJSImportNode);
+    .map(node => constructCJSImportNode(astWrap, node));
 }
 
 // Note there can be more than one define per file with global registeration.
-function findAMD(ast) {
-  return pluck(filter(ast.body, {
+function findAMD(astWrap) {
+  return pluck(filter(astWrap.ast.body, {
     type: 'ExpressionStatement'
   }), 'expression')
   .filter(isDefineCallee)
-  // Til https://github.com/lodash/lodash/commit/f20d8f5cc05f98775969c504b081ccc1fddb54c5
-  .filter(node => {
-    return isMatch(node.callee, {
-      name: 'define',
-      type: 'Identifier'
-    });
-  })
   // Ensure the define takes params and has a function
   .filter(node => node.arguments.length <= 3)
   .filter(node => filter(node.arguments, isFuncExpr).length === 1)
   .filter(node => filter(node.arguments, isArrayExpr).length <= 1)
   // Now just zip the array arguments and the provided function params
   .map(node => {
-    let outnode = constructImportNode(node, 'AMDImport');
-
+    let outnode = constructImportNode(astWrap, node, 'AMDImport');
 
     let func = find(node.arguments, isFuncExpr);
     let imports = find(node.arguments, isArrayExpr) || {elements: []};
@@ -171,22 +167,26 @@ export default function(ast, options) {
     amd: false,
     es6: true
   }, options);
-
+  let astWrap = {
+    ast,
+    scopeManager: escope.analyze(ast)
+  };
 
   let result = [];
 
   if (options.cjs) {
-    result.push(...findCJS(ast));
+    result.push(...findCJS(astWrap));
   }
 
   if (options.es6) {
     result.push(...filter(ast.body, {
       type: 'ImportDeclaration'
-    }));
+    })
+    .map(node => new ImportNode(astWrap, node)));
   }
 
   if (options.amd) {
-    result.push(...findAMD(ast));
+    result.push(...findAMD(astWrap));
   }
 
   return result;

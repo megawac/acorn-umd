@@ -50,7 +50,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 default: true
             });
 
-            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
                 type: 'Literal',
                 value: 'foo',
                 raw: '\'foo\'',
@@ -70,7 +70,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 default: true
             });
 
-            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
                 type: 'Literal',
                 value: 'bar',
                 raw: '\'bar\'',
@@ -90,7 +90,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 default: true
             });
 
-            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
                 type: 'Literal',
                 value: 'bar',
                 raw: '\'bar\'',
@@ -136,7 +136,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 default: false
             });
 
-            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
                 type: 'Literal',
                 value: 'bar',
                 raw: '\'bar\'',
@@ -156,7 +156,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 default: false
             });
 
-            expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
                 type: 'Literal',
                 value: 'foo',
                 raw: '\'foo\'',
@@ -189,7 +189,7 @@ describe('Parsing AST for CommonJS imports', function() {
         let test = imports[0];
         expect(test.specifiers).to.be.empty;
 
-        expect(_.omit(test.source, 'reference')).to.be.deep.equal({
+        expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
             type: 'Literal',
             value: 'mocha',
             raw: '\'mocha\'',

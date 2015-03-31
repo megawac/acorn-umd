@@ -18,6 +18,7 @@
     "modules",
     "ast",
     "umd",
+    "es6 imports",
     "commonjs",
     "amd"
   ],
@@ -56,7 +57,8 @@
   },
   "dependencies": {
     "acorn": "^1.0.0",
-    "lodash": "^3.6.0",
-    "walkall": "megawac/acorn-walkall"
+    "escope": "^1.0.3",
+    "estraverse": "^3.1.0",
+    "lodash": "^3.6.0"
   }
 }
