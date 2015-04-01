@@ -25,9 +25,9 @@ const isArrayExpr = matches({
   type: 'ArrayExpression'
 });
 
-const isFuncExpr = matches({
-  type: 'FunctionExpression'
-});
+function isFuncExpr(node) {
+  return /FunctionExpression$/.test(node.type);
+}
 
 // Set up an AST Node similar to an ES6 import node
 function constructImportNode(astWrap, node, type) {
@@ -155,8 +155,6 @@ function findAMD(astWrap) {
     }
     return outnode;
   });
-  // Now just format them up
-  // .map(node => console.log(node));
 }
 
 export default function(ast, options) {

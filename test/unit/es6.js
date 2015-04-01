@@ -21,7 +21,9 @@ describe('Parsing ES6 import nodes', function() {
         expect(_.all(imports, {
             type: 'ImportDeclaration'
         })).to.be.ok;
-        expect(_.all(imports, 'source')).to.be.ok;
-        expect(_.all(imports, 'specifiers')).to.be.ok;
+        imports.forEach(node => {
+            expect(node).to.have.property('source');
+            expect(node).to.have.property('specifiers');
+        });
     });
 });

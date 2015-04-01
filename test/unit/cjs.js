@@ -31,12 +31,12 @@ describe('Parsing AST for CommonJS imports', function() {
         });
 
         it('nodes have correct settings', function() {
-            expect(_.all(imports, {
-                type: 'CJSImport'
-            })).to.be.ok;
-            expect(_.all(imports, 'source')).to.be.ok;
-            expect(_.all(imports, 'specifiers')).to.be.ok;
-            expect(_.all(imports, 'reference')).to.be.ok;
+            imports.forEach(node => {
+                expect(node).to.have.property('source');
+                expect(node).to.have.property('specifiers');
+                expect(node).to.have.property('type', 'CJSImport');
+                expect(node).to.have.property('reference');
+            });
         });
 
         it('`var` node is correct', function() {
@@ -117,12 +117,12 @@ describe('Parsing AST for CommonJS imports', function() {
 
         it('identifies all cases', function() {
             expect(imports).to.have.length(2);
-            expect(_.all(imports, {
-                type: 'CJSImport'
-            })).to.be.ok;
-            expect(_.all(imports, 'source')).to.be.ok;
-            expect(_.all(imports, 'specifiers')).to.be.ok;
-            expect(_.all(imports, 'reference')).to.be.ok;
+            imports.forEach(node => {
+                expect(node).to.have.property('source');
+                expect(node).to.have.property('specifiers');
+                expect(node).to.have.property('type', 'CJSImport');
+                expect(node).to.have.property('reference');
+            });
         });
 
         it('object declaration property style', function() {
@@ -179,12 +179,12 @@ describe('Parsing AST for CommonJS imports', function() {
         });
 
         expect(imports).to.have.length(2);
-        expect(_.all(imports, {
-            type: 'CJSImport'
-        })).to.be.ok;
-        expect(_.all(imports, 'source')).to.be.ok;
-        expect(_.all(imports, 'specifiers')).to.be.ok;
-        expect(_.all(imports, 'reference')).to.be.ok;
+        imports.forEach(node => {
+            expect(node).to.have.property('source');
+            expect(node).to.have.property('specifiers');
+            expect(node).to.have.property('type', 'CJSImport');
+            expect(node).to.have.property('reference');
+        });
 
         let test = imports[0];
         expect(test.specifiers).to.be.empty;
@@ -211,12 +211,12 @@ describe('Parsing AST for CommonJS imports', function() {
         });
         it ('should identify require calls', function() {
             expect(imports).to.have.length(1);
-            expect(_.all(imports, {
-                type: 'CJSImport'
-            })).to.be.ok;
-            expect(_.all(imports, 'source')).to.be.ok;
-            expect(_.all(imports, 'specifiers')).to.be.ok;
-            expect(_.all(imports, 'reference')).to.be.ok;
+            imports.forEach(node => {
+                expect(node).to.have.property('source');
+                expect(node).to.have.property('specifiers');
+                expect(node).to.have.property('type', 'CJSImport');
+                expect(node).to.have.property('reference');
+            });
         });
 
         it('should have the correct settings', function() {

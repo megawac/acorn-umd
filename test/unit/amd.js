@@ -38,7 +38,22 @@ describe('Parsing AMD define import nodes', function() {
                 }
             });
         });
+    });
 
+    describe('ES6 style', function() {
+        let code = `
+            define(['foo', 'bar', 'twat', 'unused-import'], (foo, bar, $) => {
+                return foo();
+            });
+        `;
+        let ast = parse(code, {ecmaVersion: 6});
+        let parsed = umd(ast, {
+            es6: false, amd: true, cjs: false
+        });
+
+        it('AMD identifies multiple variables', function() {
+            expect(parsed).to.have.length(1);
+        });
     });
 
     describe('AMD works with global declaration with imports', function() {

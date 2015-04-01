@@ -1,6 +1,5 @@
 import {parse} from 'acorn';
 import umd from '../../src/acorn-umd';
-import _ from 'lodash';
 
 describe('Parsing mixed import nodes', function() {
     let code = `
@@ -18,7 +17,8 @@ describe('Parsing mixed import nodes', function() {
 
     it('should identify all the nodes', function() {
         expect(imports).to.have.length(3);
-        expect(_.all(imports, 'source')).to.be.ok;
-        expect(_.all(imports, 'specifiers')).to.be.ok;
+        imports.forEach(node => {
+            expect(node).to.have.property('specifiers');
+        });
     });
 });
