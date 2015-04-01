@@ -1,4 +1,4 @@
-import {assign, find, filter, matches, pluck, reject, take, zip} from 'lodash';
+import {assign, find, filter, matches, pluck, reject, sortBy, take, zip} from 'lodash';
 import estraverse from 'estraverse';
 import escope from 'escope';
 
@@ -32,9 +32,8 @@ const isFuncExpr = matches({
 // Set up an AST Node similar to an ES6 import node
 function constructImportNode(astWrap, node, type) {
   let {start, end} = node;
-  return new ImportNode(astWrap, {
-    type: type,
-    reference: node,
+  return new ImportNode(astWrap, node, {
+    type,
     specifiers: [],
     start, end
   });
@@ -182,12 +181,12 @@ export default function(ast, options) {
     result.push(...filter(ast.body, {
       type: 'ImportDeclaration'
     })
-    .map(node => new ImportNode(astWrap, node)));
+    .map(node => new ImportNode(astWrap, node, node)));
   }
 
   if (options.amd) {
     result.push(...findAMD(astWrap));
   }
 
-  return result;
+  return sortBy(result, 'start');
 }

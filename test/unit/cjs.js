@@ -197,173 +197,47 @@ describe('Parsing AST for CommonJS imports', function() {
             end: 28
         });
     });
-});
 
-describe('Parsing ES6 import nodes', function() {
-    let code = `
-        import {a, b, c as d} from 'library';
-        import foo from 'library';
-        import * as foo from 'lib';
-
-        export default function a() {}
-    `;
-
-    let ast = parse(code, {ecmaVersion: 6, sourceType: 'module'});
-    let imports = umd(ast, {
-        es6: true, amd: false, cjs: false
-    });
-
-    it('should find ES6 import nodes in the AST', function() {
-        expect(imports).to.have.length(3);
-        expect(_.all(imports, {
-            type: 'ImportDeclaration'
-        })).to.be.ok;
-        expect(_.all(imports, 'source')).to.be.ok;
-        expect(_.all(imports, 'specifiers')).to.be.ok;
-    });
-});
-
-describe('Parsing AMD define import nodes', function() {
-    describe('common case', function() {
+    describe('in different scope', function() {
         let code = `
-            foo();
-            define(['foo', 'bar', 'twat', 'unused-import'], function(foo, bar, $) {
-                return foo();
+            define(['a'], function(a) {
+                var test = require('test');
+                return test(a);
             });
         `;
-
-        let ast = parse(code, {ecmaVersion: 6});
-        let parsed = umd(ast, {
-            es6: false, amd: true, cjs: false
+        let ast = parse(code);
+        let imports = umd(ast, {
+            es6: false, amd: false, cjs: true
         });
-
-        it('AMD identifies multiple variables', function() {
-            expect(parsed).to.have.length(1);
-        });
-
-        it('has the correct specifiers,imports&sources', function() {
-            let {specifiers, imports, sources} = parsed[0];
-            expect(imports).to.have.length(4);
-            expect(sources).to.have.length(4);
-            expect(specifiers).to.have.length(3);
-        });
-
-        it('sources are zipped correctly', function() {
-            [['foo', 'foo'], ['bar', 'bar'], ['twat', '$'], ['unused-import']].forEach((pair, i) => {
-                let cpair = parsed[0].imports[i];
-                expect(cpair[0]).to.have.property('value', pair[0]);
-                expect(cpair[0]).to.have.property('raw', `'${pair[0]}'`);
-                if (pair.length > 1) {
-                    expect(cpair[1]).to.have.property('name', pair[1]);
-                } else {
-                    expect(cpair[1]).to.be.undefined;
-                }
-            });
-        });
-
-    });
-
-    describe('AMD works with global declaration with imports', function() {
-        let code = `
-            define(['smt'], 'global', function(smt) {return null;});
-        `;
-        let ast = parse(code, {ecmaVersion: 6});
-        let parsed = umd(ast, {
-            es6: false, amd: true, cjs: false
-        });
-
-        it('has the correct length', function() {
-            expect(parsed).to.have.length(1);
-        });
-
-        it('has the correct specifiers,imports&sources', function() {
-            let {specifiers, imports, sources} = parsed[0];
+        it ('should identify require calls', function() {
             expect(imports).to.have.length(1);
-            expect(sources).to.have.length(1);
-            expect(specifiers).to.have.length(1);
-        });
-    });
-
-    describe('AMD identifies no variables', function() {
-        let code = `
-            define(function() {return null;});
-        `;
-        let ast = parse(code, {ecmaVersion: 6});
-        let parsed = umd(ast, {
-            es6: false, amd: true, cjs: false
+            expect(_.all(imports, {
+                type: 'CJSImport'
+            })).to.be.ok;
+            expect(_.all(imports, 'source')).to.be.ok;
+            expect(_.all(imports, 'specifiers')).to.be.ok;
+            expect(_.all(imports, 'reference')).to.be.ok;
         });
 
-        it('has the correct length', function() {
-            expect(parsed).to.be.length(1);
-        });
-
-        it('has the correct specifiers,imports&sources', function() {
-            let {specifiers, imports, sources} = parsed[0];
-            expect(imports).to.be.empty;
-            expect(sources).to.be.empty;
-            expect(specifiers).to.be.empty;
-        });
-    });
-
-    describe('AMD identifies with gllobal declaration & no variables', function() {
-        let code = `
-            define('global', function() {return null;});
-        `;
-        let ast = parse(code, {ecmaVersion: 6});
-        let parsed = umd(ast, {
-            es6: false, amd: true, cjs: false
-        });
-
-        it('has the correct length', function() {
-            expect(parsed).to.be.length(1);
-        });
-
-        it('has the correct specifiers,imports&sources', function() {
-            let {specifiers, imports, sources} = parsed[0];
-            expect(imports).to.be.empty;
-            expect(sources).to.be.empty;
-            expect(specifiers).to.be.empty;
-        });
-    });
-
-    describe('with multiple declarations in a file', function() {
-        let code = `
-            define('foo', function() {return 5});
-            define(['foo', 'x'], 'bar', function(foo, x) {
-                return x + foo;
+        it('should have the correct settings', function() {
+            let test = imports[0];
+            expect(test.specifiers).to.be.deep.equal([{
+                type: 'ImportSpecifier',
+                id: {
+                    name: 'test',
+                    start: 61, end: 65,
+                    type: 'Identifier'
+                },
+                start: 61, end: 65,
+                default: true
+            }]);
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'test',
+                raw: '\'test\'',
+                start: 76,
+                end: 82
             });
-            define(['bar', 'unused-import'], function(bar) {
-                return Math.pow(bar, 2);
-            });
-        `;
-        let ast = parse(code, {ecmaVersion: 6});
-        let parsed = umd(ast, {
-            es6: false, amd: true, cjs: false
-        });
-
-        it('finds all defines with imports', function() {
-            expect(parsed).to.have.length(3);
-        });
-
-        it('Global no vars parsed correctly', function() {
-            let {specifiers, imports, sources} = parsed[0];
-            expect(imports).to.be.empty;
-            expect(sources).to.be.empty;
-            expect(specifiers).to.be.empty;
-        });
-
-        it('Global with imports parsed correctly', function() {
-            let {specifiers, imports, sources} = parsed[1];
-            expect(imports).to.have.length(2);
-            expect(sources).to.have.length(2);
-            expect(specifiers).to.have.length(2);
-        });
-
-        it('Anon with imports parsed correctly', function() {
-            let {specifiers, imports, sources} = parsed[2];
-            expect(imports).to.have.length(2);
-            expect(sources).to.have.length(2);
-            expect(specifiers).to.have.length(1);
         });
     });
 });

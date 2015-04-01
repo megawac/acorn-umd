@@ -119,3 +119,18 @@ console.log(parsed);
  }
 ]
 ```
+
+#### Get the scope of a node
+
+
+```
+import {sample} from 'lodash'
+
+let parsed = umd(ast, {
+  es6: false, amd: true, cjs: false
+});
+
+let node = sample(parsed);
+
+let scope = node.scope; // scope is null if global otherwise a function node
+```
