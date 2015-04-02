@@ -9,6 +9,6 @@ export default class ImportNode extends Node {
   }
 
   get scope() {
-    return lookup(this.reference, this.ast);
+    return lookup(this, this.ast);
   }
 }

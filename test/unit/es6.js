@@ -6,6 +6,7 @@ describe('Parsing ES6 import nodes', function() {
         import {a, b, c as d} from 'library';
         import foo from 'library';
         import * as foo from 'lib';
+        import 'polyfill';
 
         export default function a() {}
     `;
@@ -16,7 +17,7 @@ describe('Parsing ES6 import nodes', function() {
     });
 
     it('should find ES6 import nodes in the AST', function() {
-        expect(imports).to.have.length(3);
+        expect(imports).to.have.length(4);
         imports.forEach(node => {
             expect(node).to.have.property('type', 'ImportDeclaration');
             expect(node).to.have.property('source');

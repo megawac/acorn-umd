@@ -46,7 +46,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 type: 'ImportSpecifier',
                 start: 32,
                 end: 33,
-                id: { type: 'Identifier', start: 32, end: 33, name: 'x' },
+                local: { type: 'Identifier', start: 32, end: 33, name: 'x' },
                 default: true
             });
 
@@ -66,7 +66,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 type: 'ImportSpecifier',
                 start: 147,
                 end: 149,
-                id: { type: 'Identifier', start: 147, end: 149, name: 'y1' },
+                local: { type: 'Identifier', start: 147, end: 149, name: 'y1' },
                 default: true
             });
 
@@ -86,7 +86,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 type: 'ImportSpecifier',
                 start: 241,
                 end: 243,
-                id: { type: 'Identifier', start: 241, end: 243, name: 'z1' },
+                local: { type: 'Identifier', start: 241, end: 243, name: 'z1' },
                 default: true
             });
 
@@ -132,7 +132,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 type: 'ImportSpecifier',
                 start: 67,
                 end: 70,
-                id: { type: 'Identifier', start: 67, end: 70, name: 'foo' },
+                local: { type: 'Identifier', start: 67, end: 70, name: 'foo' },
                 default: false
             });
 
@@ -152,7 +152,7 @@ describe('Parsing AST for CommonJS imports', function() {
                 type: 'ImportSpecifier',
                 start: 114,
                 end: 117,
-                id: { type: 'MemberExpression', start: 114, end: 117, name: 'x' },
+                local: { type: 'MemberExpression', start: 114, end: 117, name: 'x' },
                 default: false
             });
 
@@ -223,7 +223,7 @@ describe('Parsing AST for CommonJS imports', function() {
             let test = imports[0];
             expect(test.specifiers).to.be.deep.equal([{
                 type: 'ImportSpecifier',
-                id: {
+                local: {
                     name: 'test',
                     start: 61, end: 65,
                     type: 'Identifier'
