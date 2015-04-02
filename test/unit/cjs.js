@@ -240,4 +240,50 @@ describe('Parsing AST for CommonJS imports', function() {
             });
         });
     });
+
+    describe('non default import specifiers', function() {
+        let code = `
+            let test = require('prova').test;
+        `;
+        let ast = parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: false, cjs: true
+        });
+        it ('should identify require calls', function() {
+            expect(imports).to.have.length(1);
+            imports.forEach(node => {
+                expect(node).to.have.property('source');
+                expect(node).to.have.property('specifiers');
+                expect(node).to.have.property('type', 'CJSImport');
+                expect(node).to.have.property('reference');
+            });
+        });
+
+        it('should have the correct settings', function() {
+            let test = imports[0];
+            expect(test).to.have.property('start', 13);
+            expect(test).to.have.property('end', 46);
+            expect(test.specifiers).to.be.deep.equal([{
+                type: 'ImportSpecifier',
+                local: {
+                    name: 'test',
+                    start: 17, end: 21,
+                    type: 'Identifier'
+                },
+                imported: {
+                    name: 'test',
+                    start: 41, end: 45,
+                    type: 'Identifier'
+                },
+                start: 17, end: 21,
+                default: false
+            }]);
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'prova',
+                raw: '\'prova\'',
+                start: 32, end: 39
+            });
+        });
+    });
 });

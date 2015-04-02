@@ -1,4 +1,4 @@
-import {assign, find, filter, matches, pluck, reject, sortBy, take, zip} from 'lodash';
+import {assign, clone, find, filter, matches, pluck, reject, result, sortBy, take, zip} from 'lodash';
 import estraverse from 'estraverse';
 import Node from './Node';
 import ImportNode from './ImportNode';
@@ -37,16 +37,24 @@ function constructImportNode(ast, node, type) {
   });
 }
 
-function createImportSpecifier(source, isDef) {
+function createImportSpecifier(source, definition, isDef) {
+  let imported;
+  if (definition.type === 'MemberExpression') {
+    imported = clone(definition.property);
+    isDef = false;
+  }
+
   // Add the specifier
   let {name, type, start, end} = source;
+
   return new Node({
     start, end,
     type: 'ImportSpecifier',
     local: {
       type, start, end, name
     },
-    default: typeof isDef === 'boolean' ? isDef : true
+    imported,
+    default: isDef
   });
 }
 
@@ -64,11 +72,12 @@ function constructCJSImportNode(ast, node) {
   let importExpr, isVariable = false;
 
   switch (node.type) {
+    case 'MemberExpression':
     case 'CallExpression':
       importExpr = node;
       break;
     case 'AssignmentExpression':
-      let specifier = createImportSpecifier(node.left, false);
+      let specifier = createImportSpecifier(node.left, node.right, false);
       specifier.local.name = node.left.property.name;
       result.specifiers.push(specifier);
       importExpr = node.right;
@@ -82,8 +91,12 @@ function constructCJSImportNode(ast, node) {
       let value = declaration.init || declaration.value;
       let source = isVariable ? declaration.id : declaration.key;
       importExpr = value;
-      result.specifiers.push(createImportSpecifier(source, isVariable));
+      result.specifiers.push(createImportSpecifier(source, importExpr, isVariable));
     }
+  }
+
+  if (importExpr.type === 'MemberExpression') {
+    importExpr = importExpr.object;
   }
 
   result.source = createSourceNode(node, importExpr.arguments[0]);
@@ -97,6 +110,7 @@ function findCJS(ast) {
     enter(node) {
       let expr;
       switch (node.type) {
+        case 'MemberExpression':
         case 'CallExpression':
           expr = node;
           break;
@@ -108,6 +122,10 @@ function findCJS(ast) {
           let declaration = node.declarations ? node.declarations[0] : node;
           // init for var, value for property
           expr = declaration.init || declaration.value;
+      }
+      // handle require('x').y;
+      if (result(expr, 'type') === 'MemberExpression') {
+        expr = expr.object;
       }
       if (expr && isRequireCallee(expr)) {
         requires.push(node);
