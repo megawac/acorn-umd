@@ -5,11 +5,13 @@ var _toConsumableArray = function (arr) { if (Array.isArray(arr)) { for (var i =
 var _lodash = require("lodash");
 
 var assign = _lodash.assign;
+var clone = _lodash.clone;
 var find = _lodash.find;
 var filter = _lodash.filter;
 var matches = _lodash.matches;
 var pluck = _lodash.pluck;
 var reject = _lodash.reject;
+var result = _lodash.result;
 var sortBy = _lodash.sortBy;
 var take = _lodash.take;
 var zip = _lodash.zip;
@@ -56,7 +58,13 @@ function constructImportNode(ast, node, type) {
   });
 }
 
-function createImportSpecifier(source, isDef) {
+function createImportSpecifier(source, definition, isDef) {
+  var imported = undefined;
+  if (definition.type === "MemberExpression") {
+    imported = clone(definition.property);
+    isDef = false;
+  }
+
   // Add the specifier
   var name = source.name;
   var type = source.type;
@@ -69,7 +77,8 @@ function createImportSpecifier(source, isDef) {
     local: {
       type: type, start: start, end: end, name: name
     },
-    "default": typeof isDef === "boolean" ? isDef : true
+    imported: imported,
+    "default": isDef
   });
 }
 
@@ -92,11 +101,12 @@ function constructCJSImportNode(ast, node) {
       isVariable = false;
 
   switch (node.type) {
+    case "MemberExpression":
     case "CallExpression":
       importExpr = node;
       break;
     case "AssignmentExpression":
-      var specifier = createImportSpecifier(node.left, false);
+      var specifier = createImportSpecifier(node.left, node.right, false);
       specifier.local.name = node.left.property.name;
       result.specifiers.push(specifier);
       importExpr = node.right;
@@ -111,8 +121,12 @@ function constructCJSImportNode(ast, node) {
         var value = declaration.init || declaration.value;
         var source = isVariable ? declaration.id : declaration.key;
         importExpr = value;
-        result.specifiers.push(createImportSpecifier(source, isVariable));
+        result.specifiers.push(createImportSpecifier(source, importExpr, isVariable));
       }
+  }
+
+  if (importExpr.type === "MemberExpression") {
+    importExpr = importExpr.object;
   }
 
   result.source = createSourceNode(node, importExpr.arguments[0]);
@@ -126,6 +140,7 @@ function findCJS(ast) {
     enter: function enter(node) {
       var expr = undefined;
       switch (node.type) {
+        case "MemberExpression":
         case "CallExpression":
           expr = node;
           break;
@@ -137,6 +152,10 @@ function findCJS(ast) {
           var declaration = node.declarations ? node.declarations[0] : node;
           // init for var, value for property
           expr = declaration.init || declaration.value;
+      }
+      // handle require('x').y;
+      if (result(expr, "type") === "MemberExpression") {
+        expr = expr.object;
       }
       if (expr && isRequireCallee(expr)) {
         requires.push(node);
