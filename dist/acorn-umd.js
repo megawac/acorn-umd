@@ -66,7 +66,7 @@ function createImportSpecifier(source, isDef) {
   return new Node({
     start: start, end: end,
     type: "ImportSpecifier",
-    id: {
+    local: {
       type: type, start: start, end: end, name: name
     },
     "default": typeof isDef === "boolean" ? isDef : true
@@ -97,7 +97,7 @@ function constructCJSImportNode(ast, node) {
       break;
     case "AssignmentExpression":
       var specifier = createImportSpecifier(node.left, false);
-      specifier.id.name = node.left.property.name;
+      specifier.local.name = node.left.property.name;
       result.specifiers.push(specifier);
       importExpr = node.right;
       break;

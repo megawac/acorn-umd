@@ -26,7 +26,7 @@ var ImportNode = (function (_Node) {
   _createClass(ImportNode, {
     scope: {
       get: function () {
-        return lookup(this.reference, this.ast);
+        return lookup(this, this.ast);
       }
     }
   });
