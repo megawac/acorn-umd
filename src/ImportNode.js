@@ -1,14 +1,14 @@
 import Node from './Node';
+import lookup from 'es-lookup-scope';
 
 export default class ImportNode extends Node {
   constructor(ast, reference, settings) {
     super(settings);
     this.reference = reference;
-    this._ast = ast;
+    this.ast = ast;
   }
 
   get scope() {
-    console.log(this.reference);
-    return this._ast.scopeManager.acquire(this.reference);
+    return lookup(this.reference, this.ast);
   }
 }

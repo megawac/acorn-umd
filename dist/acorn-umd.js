@@ -7,18 +7,18 @@ var _lodash = require("lodash");
 var assign = _lodash.assign;
 var find = _lodash.find;
 var filter = _lodash.filter;
-var isMatch = _lodash.isMatch;
 var matches = _lodash.matches;
 var pluck = _lodash.pluck;
 var reject = _lodash.reject;
+var sortBy = _lodash.sortBy;
 var take = _lodash.take;
 var zip = _lodash.zip;
 
-var walkSimple = require("acorn/dist/walk").simple;
+var estraverse = _interopRequire(require("estraverse"));
 
 var Node = _interopRequire(require("./Node"));
 
-var walkall = _interopRequire(require("walkall"));
+var ImportNode = _interopRequire(require("./ImportNode"));
 
 var isRequireCallee = matches({
   type: "CallExpression",
@@ -29,24 +29,28 @@ var isRequireCallee = matches({
 });
 
 var isDefineCallee = matches({
-  type: "CallExpression" });
+  type: "CallExpression",
+  callee: {
+    name: "define",
+    type: "Identifier"
+  }
+});
 
 var isArrayExpr = matches({
   type: "ArrayExpression"
 });
 
-var isFuncExpr = matches({
-  type: "FunctionExpression"
-});
+function isFuncExpr(node) {
+  return /FunctionExpression$/.test(node.type);
+}
 
 // Set up an AST Node similar to an ES6 import node
-function constructImportNode(node, type) {
+function constructImportNode(ast, node, type) {
   var start = node.start;
   var end = node.end;
 
-  return new Node({
+  return new ImportNode(ast, node, {
     type: type,
-    reference: node,
     specifiers: [],
     start: start, end: end
   });
@@ -82,8 +86,8 @@ function createSourceNode(node, source) {
   });
 }
 
-function constructCJSImportNode(node) {
-  var result = constructImportNode(node, "CJSImport");
+function constructCJSImportNode(ast, node) {
+  var result = constructImportNode(ast, node, "CJSImport");
   var importExpr = undefined,
       isVariable = false;
 
@@ -118,25 +122,27 @@ function constructCJSImportNode(node) {
 function findCJS(ast) {
   // Recursively walk ast searching for requires
   var requires = [];
-  walkSimple(ast, walkall.makeVisitors(function (node) {
-    var expr = undefined;
-    switch (node.type) {
-      case "CallExpression":
-        expr = node;
-        break;
-      case "AssignmentExpression":
-        expr = node.right;
-        break;
-      case "Property":
-      case "VariableDeclaration":
-        var declaration = node.declarations ? node.declarations[0] : node;
-        // init for var, value for property
-        expr = declaration.init || declaration.value;
+  estraverse.traverse(ast, {
+    enter: function enter(node) {
+      var expr = undefined;
+      switch (node.type) {
+        case "CallExpression":
+          expr = node;
+          break;
+        case "AssignmentExpression":
+          expr = node.right;
+          break;
+        case "Property":
+        case "VariableDeclaration":
+          var declaration = node.declarations ? node.declarations[0] : node;
+          // init for var, value for property
+          expr = declaration.init || declaration.value;
+      }
+      if (expr && isRequireCallee(expr)) {
+        requires.push(node);
+      }
     }
-    if (expr && isRequireCallee(expr)) {
-      requires.push(node);
-    }
-  }), walkall.traversers);
+  });
 
   // Filter the overlapping requires (e.g. if var x = require('./x') it'll show up twice).
   // Do this by just checking line #'s
@@ -146,7 +152,9 @@ function findCJS(ast) {
         return pos > parent.start && pos < parent.end;
       });
     });
-  }).map(constructCJSImportNode);
+  }).map(function (node) {
+    return constructCJSImportNode(ast, node);
+  });
 }
 
 // Note there can be more than one define per file with global registeration.
@@ -154,13 +162,6 @@ function findAMD(ast) {
   return pluck(filter(ast.body, {
     type: "ExpressionStatement"
   }), "expression").filter(isDefineCallee)
-  // Til https://github.com/lodash/lodash/commit/f20d8f5cc05f98775969c504b081ccc1fddb54c5
-  .filter(function (node) {
-    return isMatch(node.callee, {
-      name: "define",
-      type: "Identifier"
-    });
-  })
   // Ensure the define takes params and has a function
   .filter(function (node) {
     return node.arguments.length <= 3;
@@ -171,7 +172,7 @@ function findAMD(ast) {
   })
   // Now just zip the array arguments and the provided function params
   .map(function (node) {
-    var outnode = constructImportNode(node, "AMDImport");
+    var outnode = constructImportNode(ast, node, "AMDImport");
 
     var func = find(node.arguments, isFuncExpr);
     var imports = find(node.arguments, isArrayExpr) || { elements: [] };
@@ -190,8 +191,6 @@ function findAMD(ast) {
     }
     return outnode;
   });
-  // Now just format them up
-  // .map(node => console.log(node));
 }
 
 module.exports = function (ast, options) {
@@ -211,6 +210,8 @@ module.exports = function (ast, options) {
   if (options.es6) {
     result.push.apply(result, _toConsumableArray(filter(ast.body, {
       type: "ImportDeclaration"
+    }).map(function (node) {
+      return new ImportNode(ast, node, node);
     })));
   }
 
@@ -218,10 +219,5 @@ module.exports = function (ast, options) {
     result.push.apply(result, _toConsumableArray(findAMD(ast)));
   }
 
-  return result;
+  return sortBy(result, "start");
 };
-
-// calleee: {
-//   name: 'define',
-//   type: 'Identifier'
-// }

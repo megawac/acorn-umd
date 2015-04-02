@@ -6,16 +6,16 @@ var merge = require("lodash").merge;
 
 var Node = require("acorn").Node;
 
-var ImportNode = (function (_Node) {
-  function ImportNode(settings) {
-    _classCallCheck(this, ImportNode);
+var NodeHelper = (function (_Node) {
+  function NodeHelper(settings) {
+    _classCallCheck(this, NodeHelper);
 
     merge(this, settings);
   }
 
-  _inherits(ImportNode, _Node);
+  _inherits(NodeHelper, _Node);
 
-  return ImportNode;
+  return NodeHelper;
 })(Node);
 
-module.exports = ImportNode;
+module.exports = NodeHelper;

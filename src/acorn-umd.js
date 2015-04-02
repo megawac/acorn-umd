@@ -1,7 +1,5 @@
 import {assign, find, filter, matches, pluck, reject, sortBy, take, zip} from 'lodash';
 import estraverse from 'estraverse';
-import escope from 'escope';
-
 import Node from './Node';
 import ImportNode from './ImportNode';
 
@@ -30,9 +28,9 @@ function isFuncExpr(node) {
 }
 
 // Set up an AST Node similar to an ES6 import node
-function constructImportNode(astWrap, node, type) {
+function constructImportNode(ast, node, type) {
   let {start, end} = node;
-  return new ImportNode(astWrap, node, {
+  return new ImportNode(ast, node, {
     type,
     specifiers: [],
     start, end
@@ -61,8 +59,8 @@ function createSourceNode(node, source) {
   });
 }
 
-function constructCJSImportNode(astWrap, node) {
-  let result = constructImportNode(astWrap, node, 'CJSImport');
+function constructCJSImportNode(ast, node) {
+  let result = constructImportNode(ast, node, 'CJSImport');
   let importExpr, isVariable = false;
 
   switch (node.type) {
@@ -92,10 +90,10 @@ function constructCJSImportNode(astWrap, node) {
   return result;
 }
 
-function findCJS(astWrap) {
+function findCJS(ast) {
   // Recursively walk ast searching for requires
   let requires = [];
-  estraverse.traverse(astWrap.ast, {
+  estraverse.traverse(ast, {
     enter(node) {
       let expr;
       switch (node.type) {
@@ -123,12 +121,12 @@ function findCJS(astWrap) {
       return requires.some(parent =>
         [node.start, node.stop].some(pos => pos > parent.start && pos < parent.end));
     })
-    .map(node => constructCJSImportNode(astWrap, node));
+    .map(node => constructCJSImportNode(ast, node));
 }
 
 // Note there can be more than one define per file with global registeration.
-function findAMD(astWrap) {
-  return pluck(filter(astWrap.ast.body, {
+function findAMD(ast) {
+  return pluck(filter(ast.body, {
     type: 'ExpressionStatement'
   }), 'expression')
   .filter(isDefineCallee)
@@ -138,7 +136,7 @@ function findAMD(astWrap) {
   .filter(node => filter(node.arguments, isArrayExpr).length <= 1)
   // Now just zip the array arguments and the provided function params
   .map(node => {
-    let outnode = constructImportNode(astWrap, node, 'AMDImport');
+    let outnode = constructImportNode(ast, node, 'AMDImport');
 
     let func = find(node.arguments, isFuncExpr);
     let imports = find(node.arguments, isArrayExpr) || {elements: []};
@@ -164,26 +162,22 @@ export default function(ast, options) {
     amd: false,
     es6: true
   }, options);
-  let astWrap = {
-    ast,
-    scopeManager: escope.analyze(ast)
-  };
 
   let result = [];
 
   if (options.cjs) {
-    result.push(...findCJS(astWrap));
+    result.push(...findCJS(ast));
   }
 
   if (options.es6) {
     result.push(...filter(ast.body, {
       type: 'ImportDeclaration'
     })
-    .map(node => new ImportNode(astWrap, node, node)));
+    .map(node => new ImportNode(ast, node, node)));
   }
 
   if (options.amd) {
-    result.push(...findAMD(astWrap));
+    result.push(...findAMD(ast));
   }
 
   return sortBy(result, 'start');

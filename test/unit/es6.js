@@ -1,6 +1,5 @@
 import {parse} from 'acorn';
 import umd from '../../src/acorn-umd';
-import _ from 'lodash';
 
 describe('Parsing ES6 import nodes', function() {
     let code = `
@@ -18,10 +17,8 @@ describe('Parsing ES6 import nodes', function() {
 
     it('should find ES6 import nodes in the AST', function() {
         expect(imports).to.have.length(3);
-        expect(_.all(imports, {
-            type: 'ImportDeclaration'
-        })).to.be.ok;
         imports.forEach(node => {
+            expect(node).to.have.property('type', 'ImportDeclaration');
             expect(node).to.have.property('source');
             expect(node).to.have.property('specifiers');
         });
