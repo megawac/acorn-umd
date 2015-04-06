@@ -95,37 +95,7 @@ function createSourceNode(node, source) {
   });
 }
 
-function constructCJSImportNode(ast, node) {
-  var result = constructImportNode(ast, node, "CJSImport");
-  var importExpr = undefined,
-      isVariable = false;
-
-  switch (node.type) {
-    case "MemberExpression":
-    case "CallExpression":
-      importExpr = node;
-      break;
-    case "AssignmentExpression":
-      console.log(node);
-      var specifier = createImportSpecifier(node.left, node.right, false);
-      specifier.local.name = node.left.property.name;
-      result.specifiers.push(specifier);
-      importExpr = node.right;
-      break;
-    case "VariableDeclaration":
-      isVariable = true;
-    /* falls through */
-    case "Property":
-      {
-        var declaration = isVariable ? node.declarations[0] : node;
-        // init for var, value for property
-        var value = declaration.init || declaration.value;
-        var source = isVariable ? declaration.id : declaration.key;
-        importExpr = value;
-        result.specifiers.push(createImportSpecifier(source, importExpr, isVariable));
-      }
-  }
-
+function setImportSource(result, node, importExpr) {
   if (importExpr.type === "MemberExpression") {
     importExpr = importExpr.object;
   }
@@ -134,32 +104,70 @@ function constructCJSImportNode(ast, node) {
   return result;
 }
 
+function constructCJSImportNode(ast, node) {
+  var result = constructImportNode(ast, node, "CJSImport");
+  var importExpr = undefined;
+
+  switch (node.type) {
+    case "MemberExpression":
+    case "CallExpression":
+      importExpr = node;
+      break;
+    case "AssignmentExpression":
+      var specifier = createImportSpecifier(node.left, node.right, false);
+
+      var _ref = node.left.property || node.left,
+          name = _ref.name;
+
+      specifier.local.name = name;
+      result.specifiers.push(specifier);
+      importExpr = node.right;
+      break;
+    case "VariableDeclarator":
+      // init for var, value for property
+      importExpr = node.init;
+      result.specifiers.push(createImportSpecifier(node.id, importExpr, true));
+      break;
+    case "Property":
+      {
+        // init for var, value for property
+        importExpr = node.value;
+        result.specifiers.push(createImportSpecifier(node.key, importExpr, false));
+      }
+  }
+
+  return setImportSource(result, node, importExpr);
+}
+
 function findCJS(ast) {
   // Recursively walk ast searching for requires
   var requires = [];
+
   estraverse.traverse(ast, {
     enter: function enter(node) {
-      var expr = undefined;
+      function checkRequire(expr) {
+        if (result(expr, "type") === "MemberExpression") {
+          expr = expr.object;
+        }
+        if (expr && isRequireCallee(expr)) {
+          requires.push(node);
+          return true;
+        }
+      }
+
       switch (node.type) {
         case "MemberExpression":
         case "CallExpression":
-          expr = node;
+          checkRequire(node);
           break;
         case "AssignmentExpression":
-          expr = node.right;
+          checkRequire(node.right);
           break;
         case "Property":
-        case "VariableDeclaration":
-          var declaration = node.declarations ? node.declarations[0] : node;
-          // init for var, value for property
-          expr = declaration.init || declaration.value;
-      }
-      // handle require('x').y;
-      if (result(expr, "type") === "MemberExpression") {
-        expr = expr.object;
-      }
-      if (expr && isRequireCallee(expr)) {
-        requires.push(node);
+          checkRequire(node.value);
+          break;
+        case "VariableDeclarator":
+          checkRequire(node.init);
       }
     }
   });
