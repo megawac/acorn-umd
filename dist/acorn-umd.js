@@ -106,6 +106,7 @@ function constructCJSImportNode(ast, node) {
       importExpr = node;
       break;
     case "AssignmentExpression":
+      console.log(node);
       var specifier = createImportSpecifier(node.left, node.right, false);
       specifier.local.name = node.left.property.name;
       result.specifiers.push(specifier);

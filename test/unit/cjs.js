@@ -26,7 +26,7 @@ describe('Parsing AST for CommonJS imports', function() {
             expect(imports).to.have.length(6);
             _(imports).chunk(2)
             .each(_.spread((a, b) => {
-                expect(a.end - a.start).to.be.equal(b.end - b.start - 2);
+                expect(a.end - a.start).to.be.equal(b.end - b.start - 1);
             })).value();
         });
 
@@ -261,8 +261,6 @@ describe('Parsing AST for CommonJS imports', function() {
 
         it('should have the correct settings', function() {
             let test = imports[0];
-            expect(test).to.have.property('start', 13);
-            expect(test).to.have.property('end', 46);
             expect(test.specifiers).to.be.deep.equal([{
                 type: 'ImportSpecifier',
                 local: {
@@ -283,6 +281,66 @@ describe('Parsing AST for CommonJS imports', function() {
                 value: 'prova',
                 raw: '\'prova\'',
                 start: 32, end: 39
+            });
+        });
+    });
+
+    describe('global and comma assignments', function() {
+        let code = `
+            x = require('global');
+            let x, y = require('sec');
+        `;
+        let ast = parse(code, {ecmaVersion: 6});
+        let imports = umd(ast, {
+            es6: false, amd: false, cjs: true
+        });
+        it ('should identify require calls', function() {
+            expect(imports).to.have.length(2);
+            imports.forEach(node => {
+                expect(node).to.have.property('source');
+                expect(node).to.have.property('specifiers');
+                expect(node).to.have.property('type', 'CJSImport');
+                expect(node).to.have.property('reference');
+            });
+        });
+
+        it('globals', function() {
+            let test = imports[0];
+            expect(test.specifiers).to.be.deep.equal([{
+                type: 'ImportSpecifier',
+                local: {
+                    name: 'x',
+                    start: 13, end: 14,
+                    type: 'Identifier'
+                },
+                start: 13, end: 14,
+                default: false
+            }]);
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'global',
+                raw: '\'global\'',
+                start: 25, end: 33
+            });
+        });
+
+        it('comma assign', function() {
+            let test = imports[1];
+            expect(test.specifiers).to.be.deep.equal([{
+                type: 'ImportSpecifier',
+                local: {
+                    name: 'y',
+                    start: 55, end: 56,
+                    type: 'Identifier'
+                },
+                start: 55, end: 56,
+                default: true
+            }]);
+            expect(_.omit(test.source, '_ast', 'reference')).to.be.deep.equal({
+                type: 'Literal',
+                value: 'sec',
+                raw: '\'sec\'',
+                start: 67, end: 72
             });
         });
     });
