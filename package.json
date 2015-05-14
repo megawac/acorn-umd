@@ -1,6 +1,6 @@
 {
   "name": "acorn-umd",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Parse acorn ast for AMD, CommonJS, and ES6 definitions",
   "main": "dist/acorn-umd.js",
   "scripts": {
