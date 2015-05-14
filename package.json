@@ -58,7 +58,7 @@
   "dependencies": {
     "acorn": "^1.0.0",
     "es-lookup-scope": "^1.0.0",
-    "estraverse": "^3.1.0",
+    "estraverse": "^4.1.0",
     "lodash": "^3.6.0"
   }
 }
